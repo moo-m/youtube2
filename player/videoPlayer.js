@@ -61,8 +61,8 @@ export class VideoPlayer {
           rel: 0,          // no related-video recommendations
           modestbranding: 1,
           playsinline: 1,
-          controls: 0,     // native chrome hidden — replaced by our own glass control bar
-          disablekb: 1,    // we handle keyboard shortcuts ourselves at the app level
+          controls: 1,     // show default YouTube controls
+          disablekb: 0,    // enable keyboard shortcuts
           iv_load_policy: 3,
         },
         events: {
