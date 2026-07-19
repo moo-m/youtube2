@@ -7,7 +7,7 @@
 import { repo } from "../storage/repository.js";
 import { withMeta, relatedByPlaylist, relatedByChannel, relatedByLibrary } from "../library/libraryQuery.js";
 import { VideoPlayer } from "../player/videoPlayer.js";
-import { CustomControls } from "../player/customControls.js";
+//import { CustomControls } from "../player/customControls.js";
 import { TranscriptPanel } from "../components/transcriptPanel.js";
 import { dailyLog } from "../library/dailyLog.js";
 import { el, formatDuration, formatDate, clamp } from "../utils/helpers.js";
@@ -80,16 +80,16 @@ export class VideoView {
     await this.player.loadVideo(videoId, { startSeconds: meta.progress.position || 0 });
 
     // (Re)build the custom glass control bar for this player instance.
-    this.customControls?.destroy();
-    this.customControls = new CustomControls(this.playerWrap, this.player, (seconds) => this.transcriptPanel.setActiveTime(seconds));
+    //this.customControls?.destroy();
+   // this.customControls = new CustomControls(this.playerWrap, this.player, (seconds) => this.transcriptPanel.setActiveTime(seconds));
 
     this.transcriptPanel.load(videoId);
   }
 
   destroy() {
     this._logSessionIfNeeded();
-    this.customControls?.destroy();
-    this.customControls = null;
+//    this.customControls?.destroy();
+ //   this.customControls = null;
     this.player.destroy();
     this.currentVideoId = null;
   }
