@@ -1,14 +1,33 @@
 // Service worker for the Video Library PWA.
-// v2 — resilient caching (individual files, never fail-all) + ad blocking.
+// v3 — Dynamic ad list fetching + resilient fallback + offline support.
 
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const APP_SHELL_CACHE = `vl-app-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE  = `vl-runtime-${CACHE_VERSION}`;
+const AD_LIST_CACHE  = `vl-adlist-${CACHE_VERSION}`; // Cache مخصص لقائمة الإعلانات
 const RUNTIME_CACHE_MAX = 300;
 
-// Every app file. If one 404s during install we log it but keep going —
-// cache.addAll() fails the whole SW if any single file errors, which
-// breaks the installability signal. We avoid that by caching individually.
+// الرابط الخارجي للقائمة المُحدّثة (مصدر مفتوح وموثوق)
+const REMOTE_AD_LIST_URL = "https://ewpratten.github.io/youtube_ad_blocklist/domains.txt";
+
+// --- القائمة الثابتة (احتياطي أساسي في حال تعذر الجلب) ---
+const STATIC_AD_BLOCK_HOSTNAMES = [
+  "doubleclick.net",
+  "googleadservices.com",
+  "googlesyndication.com",
+  "google-analytics.com",
+  "pagead2.googlesyndication.com",
+  "adservice.google.com",
+  "static.doubleclick.net",
+  "imasdk.googleapis.com",   // SDK الإعلانات التفاعلية (الأكثر ظهوراً)
+  "2mdn.net",                // شبكة الإعلانات الغنية
+  "ads.youtube.com",         // نطاق فرعي مخصص للإعلانات
+];
+
+// --- المتغير العمومي للقائمة الديناميكية (يُملأ أثناء التشغيل) ---
+let dynamicAdHostnames = [];
+
+// ── ملفات التطبيق (كما هي من الكود الأصلي) ──
 const APP_SHELL_FILES = [
   "./index.html",
   "./manifest.webmanifest",
@@ -67,33 +86,71 @@ const APP_SHELL_FILES = [
   "./assets/icons/icon-maskable-512.png",
 ];
 
-// Origin-scoped ad/tracker block list (see README for scope limitation note)
-const AD_BLOCK_HOSTNAMES = [
-  "doubleclick.net",
-  "googleadservices.com",
-  "googlesyndication.com",
-  "google-analytics.com",
-  "pagead2.googlesyndication.com",
-  "adservice.google.com",
-  "static.doubleclick.net",
-];
+// ── دالة تحديث قائمة الإعلانات من الإنترنت ──
+async function refreshAdList() {
+  try {
+    const cache = await caches.open(AD_LIST_CACHE);
+    // محاولة جلب أحدث قائمة (تجاهل Cache المتصفح مؤقتاً)
+    const response = await fetch(REMOTE_AD_LIST_URL, { cache: "reload" });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    // تخزين النسخة الجديدة في Cache المخصص
+    await cache.put(REMOTE_AD_LIST_URL, response.clone());
+    
+    // قراءة النص وتحويله إلى مصفوفة (كل سطر = نطاق)
+    const text = await response.text();
+    const lines = text
+      .split("\n")
+      .map(line => line.trim())
+      .filter(line => line.length > 0 && !line.startsWith("#")); // استبعاد التعليقات
+    
+    if (lines.length > 0) {
+      dynamicAdHostnames = lines;
+      console.log(`[SW] ✅ تم تحديث قائمة الإعلانات: ${dynamicAdHostnames.length} نطاق`);
+    } else {
+      throw new Error("القائمة المستوردة فارغة");
+    }
+  } catch (error) {
+    console.warn(`[SW] ⚠️ فشل جلب القائمة الخارجية، سيتم استخدام القائمة الثابتة: ${error.message}`);
+    // في حال الفشل، نحمّل القائمة الثابتة كحل أخير
+    dynamicAdHostnames = STATIC_AD_BLOCK_HOSTNAMES;
+  }
+}
 
+// ── دالة التحقق من الإعلانات (ذكية ومدمجة) ──
 function isAdRequest(url) {
   try {
     const { hostname, pathname } = new URL(url);
-    if (AD_BLOCK_HOSTNAMES.some(h => hostname === h || hostname.endsWith(`.${h}`))) return true;
+    
+    // 1. الفحص باستخدام القائمة الديناميكية (الأحدث)
+    if (dynamicAdHostnames.some(h => hostname === h || hostname.endsWith(`.${h}`))) {
+      return true;
+    }
+    
+    // 2. الفحص باستخدام القائمة الثابتة (احتياطي إضافي)
+    if (STATIC_AD_BLOCK_HOSTNAMES.some(h => hostname === h || hostname.endsWith(`.${h}`))) {
+      return true;
+    }
+    
+    // 3. الفحص الذكي لمسارات يوتيوب المباشرة (من كودك الأصلي)
     if (hostname.endsWith("youtube.com") &&
         (pathname.startsWith("/ptracking") ||
          pathname.startsWith("/api/stats/ads") ||
-         pathname.startsWith("/pagead"))) return true;
-  } catch {}
+         pathname.startsWith("/pagead"))) {
+      return true;
+    }
+    
+  } catch (_) { /* تجاهل الأخطاء في تحليل الرابط */ }
   return false;
 }
 
-// ── Install: cache app shell resilently (one file failure ≠ SW failure) ──
+// ── Install: تخزين التطبيق + تجهيز القائمة في الخلفية ──
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(APP_SHELL_CACHE).then(async cache => {
+    (async () => {
+      // 1. تخزين ملفات التطبيق بشكل مرن (فشل ملف لا يوقف التثبيت)
+      const cache = await caches.open(APP_SHELL_CACHE);
       const results = await Promise.allSettled(
         APP_SHELL_FILES.map(url =>
           fetch(url, { cache: "reload" })
@@ -106,23 +163,35 @@ self.addEventListener("install", event => {
       );
       const failed = results.filter(r => r.status === "rejected").length;
       if (failed) console.warn(`[SW] ${failed} files skipped during install`);
-    }).then(() => self.skipWaiting())
+      
+      // 2. بدء تحديث قائمة الإعلانات (لا ننتظرها حتى لا نعطل التثبيت)
+      refreshAdList();
+    })().then(() => self.skipWaiting())
   );
 });
 
-// ── Activate: remove old caches ──
+// ── Activate: تنظيف القديم + تحديث القائمة فوراً ──
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
+    (async () => {
+      // حذف جميع الـ Caches القديمة ما عدا الثلاثة الجديدة
+      const keys = await caches.keys();
+      await Promise.all(
         keys
-          .filter(k => k !== APP_SHELL_CACHE && k !== RUNTIME_CACHE)
+          .filter(k => k !== APP_SHELL_CACHE && k !== RUNTIME_CACHE && k !== AD_LIST_CACHE)
           .map(k => caches.delete(k))
-      ))
-      .then(() => self.clients.claim())
+      );
+      
+      // تحديث قائمة الإعلانات فور التنشيط وانتظارها لضمان جاهزيتها
+      await refreshAdList();
+      
+      // السيطرة على جميع الصفحات المفتوحة
+      await self.clients.claim();
+    })()
   );
 });
 
+// ── دالة مساعدة لترتيب Cache الصور (حتى لا يتجاوز الحد الأقصى) ──
 async function trimCache(name, max) {
   const cache = await caches.open(name);
   const keys  = await cache.keys();
@@ -131,12 +200,12 @@ async function trimCache(name, max) {
   }
 }
 
-// ── Fetch ──
+// ── Fetch: التعامل مع الطلبات ──
 self.addEventListener("fetch", event => {
   const { request } = event;
   if (request.method !== "GET") return;
 
-  // Block ad/tracker requests this app makes directly
+  // 🔥 منع الإعلانات (باستخدام القوائم المدمجة والديناميكية)
   if (isAdRequest(request.url)) {
     event.respondWith(new Response("", { status: 204, statusText: "Blocked" }));
     return;
@@ -144,7 +213,7 @@ self.addEventListener("fetch", event => {
 
   const isSameOrigin = new URL(request.url).origin === self.location.origin;
 
-  // App shell: cache-first → enables full offline operation
+  // App shell (ملفات التطبيق): استراتيجية Cache-first
   if (isSameOrigin) {
     event.respondWith(
       caches.match(request).then(cached => {
@@ -161,7 +230,7 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // Cross-origin images (thumbnails): stale-while-revalidate
+  // الصور من نطاقات خارجية (مثل مصغرات الفيديو): استراتيجية stale-while-revalidate
   if (request.destination === "image") {
     event.respondWith(
       caches.open(RUNTIME_CACHE).then(async cache => {
