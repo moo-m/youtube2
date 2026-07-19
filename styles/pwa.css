@@ -1,0 +1,102 @@
+/* ── PWA Install Button (topbar) ── */
+#pwa-install-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-violet));
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: var(--shadow-glow-accent);
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-spring),
+              box-shadow var(--dur-fast) var(--ease-out);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#pwa-install-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: var(--shadow-glow-violet);
+}
+#pwa-install-btn:active { transform: scale(0.97); }
+
+/* ── iOS "Add to Home Screen" banner ── */
+#ios-install-banner {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 180;
+  width: min(420px, calc(100vw - 32px));
+  background: var(--glass-surface-strong);
+  backdrop-filter: blur(var(--glass-blur-strong));
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong));
+  border: 1px solid var(--glass-border-strong);
+  border-radius: var(--radius-xl);
+  padding: 18px 20px 16px;
+  box-shadow: var(--shadow-elevated);
+  animation: banner-up 0.4s var(--ease-spring);
+}
+
+@keyframes banner-up {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0)     scale(1);    }
+}
+
+.ios-banner-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.ios-banner-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.ios-banner-text { flex: 1; }
+.ios-banner-title {
+  font-weight: 700;
+  font-size: var(--fs-base);
+  margin-bottom: 4px;
+}
+.ios-banner-body {
+  font-size: var(--fs-sm);
+  color: var(--color-text-dim);
+  line-height: 1.45;
+}
+.ios-banner-body strong { color: var(--color-accent-strong); }
+
+.ios-banner-close {
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-faint);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.ios-banner-close:hover { color: var(--color-text); }
+
+/* Arrow pointing down toward the Share button on iOS */
+.ios-banner-arrow {
+  text-align: center;
+  margin-top: 10px;
+  font-size: var(--fs-sm);
+  color: var(--color-text-faint);
+}
+.ios-banner-arrow span {
+  color: var(--color-accent-strong);
+  font-weight: 700;
+}

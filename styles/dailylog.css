@@ -1,0 +1,66 @@
+.log-day {
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+.log-day-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.log-day-title {
+  font-size: var(--fs-md);
+}
+
+.log-day-total {
+  font-size: var(--fs-xs);
+  color: var(--color-teal-strong);
+}
+
+.log-day-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.log-entry {
+  display: grid;
+  grid-template-columns: 84px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.log-entry:hover { background: var(--glass-surface-hover); }
+
+.log-entry-thumb {
+  width: 84px;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.log-entry-title {
+  font-size: var(--fs-sm);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.log-entry-meta {
+  font-size: var(--fs-xs);
+  color: var(--color-text-faint);
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.log-entry-duration {
+  font-size: var(--fs-xs);
+  color: var(--color-text-dim);
+}

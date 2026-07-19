@@ -1,0 +1,151 @@
+/* Custom control bar layered over the embedded player (native YouTube
+   controls are hidden). Deliberately styled closer to Apple's system
+   media controls than YouTube's own chrome: a floating glass bar with a
+   thin scrubber, soft blur, and minimal iconography. */
+
+.player-wrap.has-custom-controls {
+  border-radius: var(--radius-xl);
+}
+
+.pc-center-tap {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  cursor: pointer;
+}
+
+.player-controls {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 10;
+  padding: 10px 16px 12px;
+  border-radius: var(--radius-lg);
+  background: rgba(10, 12, 20, 0.45);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.4);
+  border: 1px solid rgba(255,255,255,0.16);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+  pointer-events: none;
+}
+
+.has-custom-controls.controls-visible .player-controls {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.pc-scrubber-track {
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+.pc-scrubber-track::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.22);
+}
+.pc-scrubber-fill {
+  position: absolute;
+  left: 0;
+  height: 4px;
+  width: 0%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-violet));
+}
+.pc-scrubber-handle {
+  position: absolute;
+  left: 0%;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  transform: translateX(-50%);
+}
+
+.pc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pc-row-left, .pc-row-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pc-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.pc-btn:hover { background: rgba(255,255,255,0.14); }
+.pc-play { font-size: 1.1rem; width: 38px; height: 38px; }
+.pc-skip { font-size: 0.7rem; font-family: var(--font-mono); }
+
+.pc-time {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.85);
+}
+.pc-time-sep { color: rgba(255,255,255,0.4); font-size: 0.72rem; }
+
+.pc-volume {
+  width: 70px;
+  accent-color: var(--color-accent-strong);
+}
+
+.pc-speed-wrap { position: relative; }
+.pc-speed {
+  width: auto;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+}
+.pc-speed-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: rgba(10,12,20,0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 64px;
+}
+.pc-speed-option {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  padding: 6px 10px;
+  border-radius: 8px;
+  text-align: left;
+}
+.pc-speed-option:hover { background: rgba(255,255,255,0.12); }
+
+.pc-fullscreen { font-size: 0.95rem; }

@@ -1,0 +1,99 @@
+/* ==========================================================================
+   Liquid Glass utilities
+   Adds the actual translucency/blur/specular-sheen treatment on top of the
+   existing component stylesheets, whose selectors already reference the
+   aliased surface tokens (see tokens.css). Kept as its own file so the
+   "material" layer is easy to reason about and adjust independently of
+   component layout rules.
+   ========================================================================== */
+
+html {
+  background: var(--bg-gradient), var(--color-bg);
+  background-attachment: fixed;
+}
+
+/* Base glass treatment for the app's primary surfaces. */
+.sidebar,
+.topbar,
+.video-card,
+.modal,
+.icon-btn,
+.select,
+.view-toggle,
+.chip,
+.source-row,
+.stat-card,
+.settings-section,
+.related-item,
+.toast,
+.search-input,
+.text-input,
+select.select,
+.action-btn,
+.segmented,
+.log-day,
+.log-entry,
+.transcript-cue,
+.ai-insight-card,
+.ai-message,
+.container-card,
+.player-controls,
+.ai-panel {
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  position: relative;
+}
+
+/* Specular sheen along the top edge — the signature Liquid Glass detail. */
+.sidebar::before,
+.topbar::before,
+.video-card::before,
+.modal::before,
+.container-card::before,
+.ai-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 46%;
+  background: var(--glass-sheen);
+  border-radius: inherit;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+.sidebar, .topbar { border-width: 0; border-right: 1px solid var(--glass-border); }
+.topbar { border-right: none; border-bottom: 1px solid var(--glass-border); }
+
+.video-card:hover, .related-item:hover, .source-row:hover {
+  background: var(--glass-surface-hover);
+  border-color: var(--glass-border-strong);
+}
+
+.icon-btn:hover, .chip:hover { background: var(--glass-surface-hover); }
+
+/* Buttons get a slightly stronger, more "liquid" glass treatment. */
+.btn-ghost, .action-btn {
+  background: var(--glass-surface-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
+.btn-brass {
+  background: linear-gradient(180deg, var(--color-accent-strong), var(--color-accent));
+  box-shadow: var(--shadow-glow-accent);
+}
+
+/* Rounded, continuous corners everywhere glass appears */
+.sidebar { border-top-right-radius: var(--radius-xl); border-bottom-right-radius: var(--radius-xl); }
+.modal, .container-card, .ai-panel { border-radius: var(--radius-xl); }
+.video-card, .source-row, .stat-card, .settings-section, .log-day { border-radius: var(--radius-lg); }
+.chip, .badge, .action-btn, .btn, .icon-btn, .select { border-radius: var(--radius-pill); }
+.icon-btn { border-radius: var(--radius-md); }
+
+/* Scrollable glass panels get a subtle inner vignette instead of a hard edge. */
+.related-list, .ai-messages, #daily-log-list {
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+}

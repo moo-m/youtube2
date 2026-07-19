@@ -1,0 +1,133 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: overlay-in calc(var(--dur-fast) * var(--motion-scale)) var(--ease-out);
+}
+
+/* The [hidden] attribute must win over the class's `display: flex` —
+   equal-specificity rules fall back to source order, so this needs to be
+   declared after .modal-overlay to reliably hide the modal. */
+.modal-overlay[hidden] {
+  display: none;
+}
+@keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  width: min(460px, 92vw);
+  box-shadow: var(--shadow-elevated);
+  animation: modal-in calc(var(--dur-base) * var(--motion-scale)) var(--ease-out);
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--color-border-soft);
+}
+.modal-header h2 { font-size: var(--fs-lg); }
+
+.modal-body { padding: 20px 22px; }
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 22px;
+  border-top: 1px solid var(--color-border-soft);
+}
+
+/* ---------- Sources ---------- */
+.sources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.source-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+
+.source-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-bg-elevated);
+}
+
+.source-name { font-weight: 600; margin-bottom: 2px; }
+.source-sub {
+  font-size: var(--fs-xs);
+  color: var(--color-text-faint);
+  display: flex;
+  gap: 8px;
+}
+.source-type-badge {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-accent-strong);
+}
+
+.source-actions {
+  display: flex;
+  gap: 6px;
+}
+.source-actions .icon-btn { width: 32px; height: 32px; font-size: 0.85rem; }
+
+/* ---------- Stats ---------- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  padding: 18px;
+}
+
+.stat-label {
+  font-size: var(--fs-xs);
+  color: var(--color-text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xl);
+  color: var(--color-accent-strong);
+}
+
+.stat-sub {
+  font-size: var(--fs-xs);
+  color: var(--color-text-dim);
+  margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

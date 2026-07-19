@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Video Library</title>
+<meta name="description" content="Your personal, offline-capable YouTube video library." />
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#060810" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Video Library" />
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+<link rel="icon" href="assets/icons/icon-192.png" />
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+<!-- Styles -->
+<link rel="stylesheet" href="styles/tokens.css" />
+<link rel="stylesheet" href="styles/glass.css" />
+<link rel="stylesheet" href="styles/base.css" />
+<link rel="stylesheet" href="styles/layout.css" />
+<link rel="stylesheet" href="styles/components.css" />
+<link rel="stylesheet" href="styles/card.css" />
+<link rel="stylesheet" href="styles/containers.css" />
+<link rel="stylesheet" href="styles/player.css" />
+<link rel="stylesheet" href="styles/customcontrols.css" />
+<link rel="stylesheet" href="styles/transcript.css" />
+<link rel="stylesheet" href="styles/ai.css" />
+<link rel="stylesheet" href="styles/dailylog.css" />
+<link rel="stylesheet" href="styles/modal.css" />
+<link rel="stylesheet" href="styles/settings.css" />
+<link rel="stylesheet" href="styles/responsive.css" />
+<link rel="stylesheet" href="styles/pwa.css" />
+</head>
+<body>
+
+<div id="toast-region" class="toast-region" aria-live="polite"></div>
+
+<!-- ── iOS "Add to Home Screen" banner ── -->
+<div id="ios-install-banner" hidden>
+  <div class="ios-banner-inner">
+    <img class="ios-banner-icon" src="assets/icons/icon-192.png" alt="" />
+    <div class="ios-banner-text">
+      <div class="ios-banner-title">Install Video Library</div>
+      <div class="ios-banner-body">
+        Tap <strong>Share ↑</strong> then
+        <strong>Add to Home Screen</strong> for the full app experience with offline access.
+      </div>
+    </div>
+    <button class="ios-banner-close" aria-label="Dismiss">✕</button>
+  </div>
+  <div class="ios-banner-arrow">↓ Look for the Share button in your browser toolbar</div>
+</div>
+
+<div class="app-shell">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" id="sidebar" data-collapsed="false">
+    <div class="sidebar-brand">
+      <span class="brand-mark" aria-hidden="true">⌘</span>
+      <span class="brand-name">Video Library</span>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Primary">
+      <button class="nav-item is-active" data-view="home" data-filter="all">
+        <span class="nav-icon" aria-hidden="true">▤</span><span>All Videos</span>
+      </button>
+      <button class="nav-item" data-view="home" data-filter="unwatched">
+        <span class="nav-icon" aria-hidden="true">◌</span><span>Unwatched</span>
+      </button>
+      <button class="nav-item" data-view="home" data-filter="watching">
+        <span class="nav-icon" aria-hidden="true">◐</span><span>Watching</span>
+      </button>
+      <button class="nav-item" data-view="home" data-filter="completed">
+        <span class="nav-icon" aria-hidden="true">●</span><span>Completed</span>
+      </button>
+      <button class="nav-item" data-view="home" data-filter="favorites">
+        <span class="nav-icon" aria-hidden="true">♥</span><span>Favorites</span>
+      </button>
+      <button class="nav-item" data-view="home" data-filter="watchlater">
+        <span class="nav-icon" aria-hidden="true">◷</span><span>Watch Later</span>
+      </button>
+      <button class="nav-item" data-view="home" data-filter="hidden">
+        <span class="nav-icon" aria-hidden="true">◌̸</span><span>Hidden</span>
+      </button>
+
+      <div class="nav-divider" role="separator"></div>
+      <div class="nav-label">Library</div>
+
+      <button class="nav-item" data-view="sources">
+        <span class="nav-icon" aria-hidden="true">▥</span><span>Sources</span>
+      </button>
+      <button class="nav-item" data-view="dailylog">
+        <span class="nav-icon" aria-hidden="true">◫</span><span>Daily Log</span>
+      </button>
+      <button class="nav-item" data-view="stats">
+        <span class="nav-icon" aria-hidden="true">▦</span><span>Statistics</span>
+      </button>
+      <button class="nav-item" data-view="settings">
+        <span class="nav-icon" aria-hidden="true">⚙</span><span>Settings</span>
+      </button>
+    </nav>
+
+    <button class="btn btn-brass sidebar-add-btn" id="open-add-source">
+      <span aria-hidden="true">+</span> Add Source
+    </button>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main" id="main">
+    <header class="topbar">
+      <button class="icon-btn sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">☰</button>
+
+      <div class="search-wrap">
+        <input type="search" id="search-input" class="search-input"
+               placeholder="Search your library…" aria-label="Search library" autocomplete="off" />
+        <div class="search-suggestions" id="search-suggestions" hidden></div>
+      </div>
+
+      <div class="topbar-controls">
+        <select id="sort-select" class="select" aria-label="Sort videos">
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+          <option value="most-watched">Most Watched</option>
+          <option value="least-watched">Least Watched</option>
+          <option value="alphabetical">A–Z</option>
+          <option value="recently-watched">Recently Watched</option>
+          <option value="progress">Progress</option>
+          <option value="duration">Duration</option>
+        </select>
+
+        <div class="view-toggle" role="group" aria-label="Layout">
+          <button class="view-toggle-btn is-active" id="view-grid" aria-label="Grid view">▦</button>
+          <button class="view-toggle-btn" id="view-list" aria-label="List view">☰</button>
+        </div>
+
+        <button class="icon-btn" id="theme-toggle" aria-label="Toggle theme">◐</button>
+
+        <!-- Install button: hidden until browser fires beforeinstallprompt -->
+        <button id="pwa-install-btn" hidden aria-label="Install app">
+          ⬇ Install App
+        </button>
+      </div>
+    </header>
+
+    <div class="view-title-row">
+      <h1 class="view-title" id="view-title">All Videos</h1>
+      <span class="view-count" id="view-count"></span>
+    </div>
+
+    <!-- Home / grid view -->
+    <section id="view-home" class="view">
+      <div class="container-back-row" id="container-back-row" hidden>
+        <button class="container-back-btn" id="container-back-btn">← All sources</button>
+      </div>
+      <div class="container-grid" id="container-grid" hidden></div>
+      <div class="filter-chip-row" id="channel-playlist-filters"></div>
+      <div class="video-grid" id="video-grid" aria-live="polite"></div>
+      <div class="empty-state" id="empty-state" hidden>
+        <p class="empty-title">Nothing here yet</p>
+        <p class="empty-body">Add a channel, playlist, or video to start building your library.</p>
+        <button class="btn btn-brass" id="empty-add-source">+ Add Source</button>
+      </div>
+    </section>
+
+    <!-- Video detail / player view -->
+    <section id="view-video" class="view" hidden>
+      <div class="video-page">
+        <div class="video-page-main">
+          <div class="player-wrap">
+            <div id="yt-player"></div>
+          </div>
+          <div class="video-meta">
+            <h2 class="video-title" id="vp-title"></h2>
+            <div class="video-subline">
+              <span id="vp-channel" class="video-channel"></span>
+              <span class="dot">·</span>
+              <span id="vp-date" class="video-date"></span>
+              <span class="dot">·</span>
+              <span id="vp-duration" class="video-duration mono"></span>
+            </div>
+
+            <div class="video-actions">
+              <button class="action-btn" id="vp-favorite"   data-active="false"><span aria-hidden="true">♥</span> Favorite</button>
+              <button class="action-btn" id="vp-watchlater" data-active="false"><span aria-hidden="true">◷</span> Watch Later</button>
+              <button class="action-btn" id="vp-hide"       data-active="false"><span aria-hidden="true">◌̸</span> Hide</button>
+              <button class="action-btn" id="vp-complete"   data-active="false"><span aria-hidden="true">●</span> Mark Completed</button>
+              <button class="action-btn" id="vp-ask-ai"><span aria-hidden="true">✦</span> Ask AI</button>
+            </div>
+
+            <div class="progress-line">
+              <div class="progress-track"><div class="progress-fill" id="vp-progress-fill"></div></div>
+              <span class="mono progress-pct" id="vp-progress-pct">0%</span>
+            </div>
+
+            <p class="video-description" id="vp-description"></p>
+
+            <!-- Transcript panel injected here -->
+            <div class="transcript-section" id="transcript-section"></div>
+          </div>
+        </div>
+
+        <aside class="video-page-related">
+          <div class="related-tabs" role="tablist">
+            <button class="related-tab is-active" data-related="playlist" role="tab">Playlist</button>
+            <button class="related-tab"           data-related="channel"  role="tab">Channel</button>
+            <button class="related-tab"           data-related="library"  role="tab">Library</button>
+          </div>
+          <div class="related-list" id="related-list"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Sources view -->
+    <section id="view-sources" class="view" hidden>
+      <div class="sources-list" id="sources-list"></div>
+    </section>
+
+    <!-- Daily Log view -->
+    <section id="view-dailylog" class="view" hidden>
+      <div id="daily-log-list"></div>
+    </section>
+
+    <!-- Statistics view -->
+    <section id="view-stats" class="view" hidden>
+      <div class="stats-grid" id="stats-grid"></div>
+    </section>
+
+    <!-- Settings view -->
+    <section id="view-settings" class="view" hidden>
+      <div class="settings-panel" id="settings-panel"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ── Add Source Modal ── -->
+<div class="modal-overlay" id="modal-add-source" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="add-source-title">
+    <div class="modal-header">
+      <h2 id="add-source-title">Add Source</h2>
+      <button class="icon-btn" id="close-add-source" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label" for="source-url">YouTube channel, playlist, or video URL</label>
+      <input type="text" id="source-url" class="text-input"
+             placeholder="https://www.youtube.com/…" />
+      <p class="field-hint">Shorts are automatically detected and skipped on import.</p>
+      <div class="modal-status" id="add-source-status" aria-live="polite"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancel-add-source">Cancel</button>
+      <button class="btn btn-brass" id="confirm-add-source">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── API Key Modal ── -->
+<div class="modal-overlay" id="modal-api-key" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="api-key-title">
+    <div class="modal-header">
+      <h2 id="api-key-title">YouTube Data API Key</h2>
+    </div>
+    <div class="modal-body">
+      <p class="field-hint">Needed to import channels and playlists. Stored only in this browser.</p>
+      <label class="field-label" for="api-key-input">API Key</label>
+      <input type="text" id="api-key-input" class="text-input" placeholder="AIza…" />
+      <div class="modal-status" id="api-key-status" aria-live="polite"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancel-api-key">Cancel</button>
+      <button class="btn btn-brass" id="confirm-api-key">Save Key</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── AI Assistant slide-over ── -->
+<button class="ai-fab" id="ai-fab" aria-label="Open AI Assistant">✦</button>
+<div class="ai-panel-overlay" id="ai-panel-overlay" hidden></div>
+<aside class="ai-panel" id="ai-panel" hidden aria-label="AI Assistant">
+  <div class="ai-panel-header">
+    <div class="ai-panel-title-wrap">
+      <span class="ai-panel-title">AI Assistant</span>
+      <span class="ai-scope-label" id="ai-scope-label">General</span>
+    </div>
+    <button class="ai-panel-close" id="ai-panel-close" aria-label="Close">✕</button>
+  </div>
+  <p class="ai-config-hint" id="ai-config-hint" hidden>
+    No AI API configured yet — add an endpoint and key in Settings.
+  </p>
+  <div class="ai-insights" id="ai-insights" hidden></div>
+  <div class="ai-messages" id="ai-messages"></div>
+  <form class="ai-input-form" id="ai-input-form">
+    <input type="text" id="ai-input" class="ai-input"
+           placeholder="Ask a question…" autocomplete="off" />
+    <button type="submit" class="ai-send-btn" aria-label="Send">➤</button>
+  </form>
+</aside>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
