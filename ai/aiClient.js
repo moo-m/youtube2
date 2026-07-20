@@ -7,9 +7,17 @@ import { STORAGE_KEYS, DEFAULT_AI_CONFIG } from "../utils/constants.js";
 import { localStore } from "../storage/localStore.js";
 
 export function getAiConfig() {
-  return { ...DEFAULT_AI_CONFIG, ...localStore.get(STORAGE_KEYS.AI_CONFIG, {}) };
+  const saved = localStore.get(STORAGE_KEYS.AI_CONFIG, {});
+  
+  // القيم الافتراضية الجديدة (تطغى على أي قيم محفوظة)
+  const defaults = {
+    endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    apiKey: "AQ.Ab8RN6JPH3YVM7jW_vkzzqnnP1dhlKBKsgtspnuO7jEL4-TReQ",
+    model: "gemini-2.5-flash"
+  };
+  
+  return { ...defaults, ...saved };
 }
-
 export function saveAiConfig(config) {
   localStore.set(STORAGE_KEYS.AI_CONFIG, config);
 }
@@ -20,15 +28,17 @@ export function isAiConfigured() {
 }
 
 export const aiClient = {
-  /**
-   * @param {{role: "system"|"user"|"assistant", content: string}[]} messages
-   * @returns {Promise<string>} assistant reply text
-   */
   async chat(messages) {
     const { endpoint, apiKey, model } = getAiConfig();
     if (!endpoint || !apiKey) {
       throw new Error("No AI API is configured yet. Add an endpoint and key in Settings.");
     }
+
+    // تحويل صيغة OpenAI {role, content} إلى صيغة Gemini {role, parts}
+    const contents = messages.map(msg => ({
+      role: msg.role === "assistant" ? "model" : msg.role, // 'assistant' تصبح 'model'
+      parts: [{ text: msg.content }],
+    }));
 
     let res;
     try {
@@ -36,12 +46,13 @@ export const aiClient = {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+          "x-goog-api-key": apiKey, // 🔑 التغيير الأهم هنا
         },
         body: JSON.stringify({
-          model: model || undefined,
-          messages,
-          temperature: 0.5,
+          contents: contents, // بدلاً من messages
+          generationConfig: {
+            temperature: 0.5,
+          },
         }),
       });
     } catch (err) {
@@ -54,7 +65,8 @@ export const aiClient = {
     }
 
     const data = await res.json();
-    const reply = data?.choices?.[0]?.message?.content;
+    // استخراج الرد من صيغة Gemini
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!reply) throw new Error("The AI response didn't include any message content.");
     return reply.trim();
   },
