@@ -19,47 +19,72 @@ const TIMEDTEXT_BASE = "https://www.youtube.com/api/timedtext";
 
 /** Decode a handful of HTML entities that show up in timedtext XML. */
 function decodeEntities(str) {
-  return str
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\n/g, " ");
+  const txt = document.createElement("textarea");
+  txt.innerHTML = str;
+  return txt.value.replace(/\n/g, " ").trim();
 }
 
 function parseTimedTextXml(xmlText) {
   const doc = new DOMParser().parseFromString(xmlText, "text/xml");
   if (doc.querySelector("parsererror")) return [];
   const nodes = [...doc.querySelectorAll("text")];
-  return nodes.map((node) => ({
-    start: parseFloat(node.getAttribute("start") || "0"),
-    duration: parseFloat(node.getAttribute("dur") || "2"),
-    text: decodeEntities(node.textContent || "").trim(),
-  })).filter((cue) => cue.text.length > 0);
+return nodes
+  .map((node) => ({
+    start: Number(node.getAttribute("start") || 0),
+    duration: Number(node.getAttribute("dur") || 2),
+    text: decodeEntities(node.textContent || ""),
+  }))
+  .filter((c) => c.text);
 }
 
 /** Try to auto-fetch a transcript straight from YouTube. May legitimately fail (see header note). */
 async function tryAutoFetch(videoId) {
   try {
     const listUrl = `${TIMEDTEXT_BASE}?type=list&v=${encodeURIComponent(videoId)}`;
-    const listRes = await fetch(listUrl);
+    const controller = new AbortController();
+
+setTimeout(() => controller.abort(), 8000);
+const listRes = await fetch(listUrl, {
+  signal: controller.signal,
+});
     if (!listRes.ok) return null;
     const listXml = await listRes.text();
     const listDoc = new DOMParser().parseFromString(listXml, "text/xml");
     const tracks = [...listDoc.querySelectorAll("track")];
     if (!tracks.length) return null;
 
-    const preferredLang = (navigator.language || "en").slice(0, 2);
-    const track =
-      tracks.find((t) => t.getAttribute("lang_code") === preferredLang) ||
-      tracks.find((t) => t.getAttribute("lang_code") === "en") ||
-      tracks[0];
+const preferredLang = (navigator.language || "en").slice(0, 2);
+
+const scoreTrack = (track) => {
+  const lang = track.getAttribute("lang_code");
+  const kind = track.getAttribute("kind");
+  let score = 0;
+
+  if (lang === preferredLang) score += 100;
+  if (lang === "en") score += 50;
+
+  // فضل الترجمات التي أنشأها صاحب الفيديو
+  if (!kind) score += 20;
+
+  // استخدم الترجمة التلقائية فقط إذا لم يوجد غيرها
+  if (kind === "asr") score += 5;
+
+  return score;
+};
+
+tracks.sort((a, b) => scoreTrack(b) - scoreTrack(a));
+
+const track = tracks[0];
 
     const lang = track.getAttribute("lang_code");
     const name = track.getAttribute("name") || "";
-    const trackUrl = `${TIMEDTEXT_BASE}?lang=${encodeURIComponent(lang)}&v=${encodeURIComponent(videoId)}${name ? `&name=${encodeURIComponent(name)}` : ""}`;
-    const textRes = await fetch(trackUrl);
+const targetLang = (navigator.language || "en").slice(0, 2);
+
+const trackUrl =
+`${TIMEDTEXT_BASE}?lang=${encodeURIComponent(lang)}&v=${encodeURIComponent(videoId)}${name ? `&name=${encodeURIComponent(name)}` : ""}&fmt=vtt&tlang=${encodeURIComponent(targetLang)}`;
+const textRes = await fetch(trackUrl, {
+  signal: controller.signal,
+});
     if (!textRes.ok) return null;
     const textXml = await textRes.text();
     const cues = parseTimedTextXml(textXml);
@@ -122,6 +147,9 @@ export const transcriptService = {
   /** Attempt automatic retrieval; caches on success. Returns null if unavailable. */
   async fetchAuto(videoId) {
     const cached = await this.getCached(videoId);
+    if (cached?.cues?.length) {
+    return cached;
+}
     if (cached) return cached;
 
     const result = await tryAutoFetch(videoId);
@@ -147,7 +175,19 @@ export const transcriptService = {
   /** Flatten cues into plain text, useful as AI context. */
   toPlainText(record, maxChars = 6000) {
     if (!record?.cues?.length) return "";
-    const text = record.cues.map((c) => c.text).join(" ");
-    return text.length > maxChars ? `${text.slice(0, maxChars)}…` : text;
-  },
+
+    let out = "";
+
+    for (const cue of record.cues) {
+        if (!cue.text) continue;
+
+        if ((out + cue.text).length > maxChars) {
+            break;
+        }
+
+        out += cue.text + " ";
+    }
+
+    return out.trim();
+},
 };
