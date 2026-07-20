@@ -11,7 +11,7 @@ export function getAiConfig() {
   
   // القيم الافتراضية الجديدة (تطغى على أي قيم محفوظة)
   const defaults = {
-    endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    endpoint: "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent",
     apiKey: "AQ.Ab8RN6JPH3YVM7jW_vkzzqnnP1dhlKBKsgtspnuO7jEL4-TReQ",
     model: "gemini-2.5-flash"
   };
