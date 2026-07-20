@@ -33,12 +33,18 @@ export const DEFAULT_SETTINGS = {
   layout: "grid",         // grid | list
 };
 
-export const DEFAULT_AI_CONFIG = {
-  endpoint: "",   // OpenAI-compatible chat completions URL, filled in later by the user
-  apiKey: "",
-  model: "",
-};
+// utils/constants.js
 
+export const DEFAULT_AI_CONFIG = {
+  // استخدم مسار التوافق مع OpenAI (يدعم المفتاح AQ. وطريقة Bearer)
+  endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+  
+  // مفتاحك الشخصي الذي اختبرته ونجح
+  apiKey: "AQ.Ab8RN6JPH3YVM7jW_vkzzqnnP1dhlKBKsgtspnuO7jEL4-TReQ",
+  
+  // النموذج الموجود في قائمتك والمتوافق مع هذا المسار
+  model: "gemini-2.5-flash"
+};
 export const YT_API_BASE = "https://www.googleapis.com/youtube/v3";
 
 // ISO 8601 duration below this is very likely a Short; combined with
