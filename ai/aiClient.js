@@ -31,43 +31,32 @@ export const aiClient = {
   async chat(messages) {
     const { endpoint, apiKey, model } = getAiConfig();
     if (!endpoint || !apiKey) {
-      throw new Error("No AI API is configured yet. Add an endpoint and key in Settings.");
+      throw new Error("No AI API is configured yet.");
     }
 
-    // تحويل صيغة OpenAI {role, content} إلى صيغة Gemini {role, parts}
     const contents = messages.map(msg => ({
-      role: msg.role === "assistant" ? "model" : msg.role, // 'assistant' تصبح 'model'
+      role: msg.role === "assistant" ? "model" : msg.role,
       parts: [{ text: msg.content }],
     }));
 
-    let res;
-    try {
-      res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey, // 🔑 التغيير الأهم هنا
-        },
-        body: JSON.stringify({
-          contents: contents, // بدلاً من messages
-          generationConfig: {
-            temperature: 0.5,
-          },
-        }),
-      });
-    } catch (err) {
-      throw new Error("Couldn't reach the AI endpoint. Check the URL and your connection.");
-    }
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        contents,
+        generationConfig: { temperature: 0.5 },
+      }),
+    });
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      throw new Error(body?.error?.message || `AI request failed (${res.status}).`);
+      throw new Error(body?.error?.message || `Request failed (${res.status})`);
     }
 
     const data = await res.json();
-    // استخراج الرد من صيغة Gemini
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!reply) throw new Error("The AI response didn't include any message content.");
-    return reply.trim();
-  },
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "No reply";
+  }
 };
